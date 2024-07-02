@@ -1,14 +1,16 @@
+require ("dotenv").config()
 import "reflect-metadata"
 import { DataSource } from "typeorm"
 import { User } from "./entity/User"
+import * as dotenv from "dotenv";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
-    host: "localhost",
+    host: process.env.DB_HOST,
     port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
     synchronize: true,
     logging: false,
     entities: [User],
