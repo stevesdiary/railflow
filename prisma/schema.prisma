@@ -234,6 +234,7 @@ model Journey {
 
   train     Train           @relation(fields: [trainId], references: [id], onDelete: Cascade)
   inventory InventoryItem[]
+  bookings  Booking[]
 
   @@unique([trainId, journeyDate])
   @@index([trainId, journeyDate])
@@ -305,6 +306,7 @@ model Booking {
 
   fromStation Station @relation("bookingFrom", fields: [fromStationId], references: [id])
   toStation   Station @relation("bookingTo", fields: [toStationId], references: [id])
+  journey     Journey @relation(fields: [journeyId], references: [id])
 
   passengers  BookingPassenger[]
   seats       BookingSeat[]
