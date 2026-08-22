@@ -230,17 +230,47 @@ export class PrismaBookingRepository implements BookingRepository {
     return result.count;
   }
 
-  findIdempotentResponse(userId: string, key: string): Promise<StoredIdempotentResponse | null> {
-    const row = this.prisma.idempotencyKey.findUnique({
+  async findIdempotentResponse(
+    userId: string,
+    key: string,
+  ): Promise<StoredIdempotentResponse | null> {
+    const row = await this.prisma.idempotencyKey.findUnique({
       where: { userId_key: { userId, key } },
       select: { responseStatus: true, responseBody: true },
     });
     return row;
   }
 
+  async storeResponse(
+    userId: string,
+    key: string,
+    responseStatus: number,
+    responseBody: unknown,
+  ): Promise<void> {
+    await this.prisma.idempotencyKey.update({
+      where: { userId_key: { userId, key } },
+      data: {
+        responseStatus,
+        responseBody: responseBody as Prisma.InputJsonValue,
+      },
+    });
+  }
+
   async createBooking(input: CreateBookingRecordInput): Promise<CreateBookingResult> {
     try {
       const booking = await this.prisma.$transaction(async (tx) => {
+        const fromStation = await tx.station.findUnique({
+          where: { code: input.fromStationCode },
+          select: { id: true },
+        });
+        const toStation = await tx.station.findUnique({
+          where: { code: input.toStationCode },
+          select: { id: true },
+        });
+        if (!fromStation || !toStation) {
+          throw new Error('Route stations not found');
+        }
+
         if (input.idempotencyKey) {
           await tx.idempotencyKey.create({
             data: {
@@ -258,8 +288,8 @@ export class PrismaBookingRepository implements BookingRepository {
             pnr: input.pnr,
             userId: input.userId,
             journeyId: input.journeyId,
-            fromStation: { connect: { code: input.fromStationCode } },
-            toStation: { connect: { code: input.toStationCode } },
+            fromStationId: fromStation.id,
+            toStationId: toStation.id,
             quotaCode: input.quotaCode,
             status: 'SEATS_HELD',
             totalAmount: input.totalAmount,
@@ -301,15 +331,17 @@ export class PrismaBookingRepository implements BookingRepository {
         if (input.idempotencyKey) {
           await tx.idempotencyKey.update({
             where: { userId_key: { userId: input.userId, key: input.idempotencyKey } },
-            data: {
-              bookingId: created.id,
-              responseBody: { reference: created.bookingReference } as Prisma.InputJsonValue,
-            },
+            data: { bookingId: created.id },
           });
         }
         return created;
       });
-      return { ok: true, ...booking };
+      return {
+        ok: true,
+        bookingId: booking.id,
+        bookingReference: booking.bookingReference,
+        pnr: booking.pnr,
+      };
     } catch (err) {
       const conflict = classifyUniqueError(err);
       if (conflict) {
