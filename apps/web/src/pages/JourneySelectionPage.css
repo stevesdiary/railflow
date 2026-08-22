@@ -1,0 +1,155 @@
+.journey-selection__search {
+  background-color: var(--color-neutral-100);
+  border-bottom: 1px solid var(--color-neutral-200);
+  padding-block: var(--space-6);
+}
+
+.journey-selection__results {
+  padding-block: var(--space-8);
+}
+
+.journey-selection__summary {
+  margin-bottom: var(--space-6);
+}
+
+.journey-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.journey-card {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 0.8fr auto;
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-6);
+}
+
+.journey-card--skeleton {
+  height: 116px;
+  background: linear-gradient(
+    100deg,
+    var(--color-neutral-100) 30%,
+    var(--color-neutral-200) 50%,
+    var(--color-neutral-100) 70%
+  );
+  background-size: 200% 100%;
+  animation: journey-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes journey-skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.journey-card__time {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.journey-card__clock {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-neutral-900);
+}
+
+.journey-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.journey-card__train {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.journey-card__train-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-700);
+}
+
+.journey-card__classes {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.journey-card__class {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-sm);
+  color: var(--color-neutral-600);
+}
+
+.journey-card__status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.journey-card__booking {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.journey-card__fare {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-neutral-900);
+}
+
+.journey-selection__empty {
+  padding-block: var(--space-16);
+  display: flex;
+  justify-content: center;
+}
+
+.journey-selection__empty-card {
+  max-width: var(--content-max-width);
+  text-align: center;
+  padding: var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .journey-card {
+    grid-template-columns: 1fr 1fr;
+    row-gap: var(--space-4);
+  }
+
+  .journey-card__booking {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .journey-card {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-card__status,
+  .journey-card__booking {
+    align-items: flex-start;
+  }
+
+  .journey-card__booking {
+    grid-column: 1;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

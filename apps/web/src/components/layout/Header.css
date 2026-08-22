@@ -1,0 +1,122 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--color-neutral-0);
+  border-bottom: 1px solid var(--color-neutral-200);
+  box-shadow: var(--shadow-xs);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--header-height);
+}
+
+.header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-neutral-900);
+}
+
+.header__brand:hover {
+  text-decoration: none;
+}
+
+.header__logo {
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+
+.header__wordmark {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-primary-700);
+}
+
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin-left: var(--space-4);
+}
+
+.header__link {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-neutral-600);
+  padding-block: var(--space-2);
+  border-bottom: 2px solid transparent;
+}
+
+.header__link:hover {
+  color: var(--color-primary-700);
+  text-decoration: none;
+}
+
+.header__link--active {
+  color: var(--color-primary-700);
+  border-bottom-color: var(--color-primary-600);
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+.header__auth {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-700);
+}
+
+.header__auth:hover {
+  text-decoration: underline;
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.header__user-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-700);
+}
+
+.header__logout {
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-500);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.header__logout:hover {
+  color: var(--color-danger-700);
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .header__inner {
+    gap: var(--space-4);
+  }
+
+  .header__nav {
+    display: none;
+  }
+
+  .header__cta {
+    padding-inline: var(--space-4);
+  }
+}

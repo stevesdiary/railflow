@@ -1,0 +1,162 @@
+.journey-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.journey-details__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.journey-details__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.journey-details__classes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.journey-details__card {
+  max-width: var(--content-max-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  align-items: stretch;
+  text-align: left;
+}
+
+.journey-details__selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.journey-details__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.seat-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-neutral-600);
+}
+
+.seat-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.seat-dot--avail {
+  background: var(--color-primary-100);
+  border: 1px solid var(--color-primary-500);
+}
+
+.seat-dot--held {
+  background: var(--color-warning-50);
+  border: 1px solid var(--color-warning-600);
+}
+
+.seat-dot--unavailable {
+  background: var(--color-neutral-200);
+  border: 1px solid var(--color-neutral-300);
+}
+
+.journey-details__coach {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+  gap: var(--space-2);
+}
+
+.seat {
+  min-height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--color-primary-500);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-100);
+  color: var(--color-primary-800);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.seat:hover:not(:disabled) {
+  background: var(--color-primary-300);
+}
+
+.seat:focus-visible {
+  outline: 2px solid var(--color-primary-400);
+  outline-offset: 2px;
+}
+
+.seat--held {
+  background: var(--color-warning-50);
+  border-color: var(--color-warning-600);
+  color: var(--color-warning-600);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.seat--booked,
+.seat--cancelled,
+.seat--maintenance {
+  background: var(--color-neutral-200);
+  border-color: var(--color-neutral-300);
+  color: var(--color-neutral-500);
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.seat--selected {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-600);
+  color: var(--color-neutral-0);
+}
+
+.journey-details__empty {
+  text-align: center;
+  padding: var(--space-6);
+}
+
+.journey-details__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.journey-details__hold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.journey-details__countdown {
+  color: var(--color-warning-600);
+}
+
+.journey-details__error {
+  color: var(--color-danger-500);
+}
