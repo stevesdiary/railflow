@@ -113,6 +113,8 @@ model Station {
   trainStops TrainStop[]
   fromFares  Fare[]     @relation("fareFrom")
   toFares    Fare[]     @relation("fareTo")
+  bookingsFrom Booking[] @relation("bookingFrom")
+  bookingsTo   Booking[] @relation("bookingTo")
 
   @@index([city])
   @@index([status])
@@ -247,10 +249,113 @@ model InventoryItem {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
-  seat    Seat    @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  journey Journey       @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  seat    Seat          @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  booking BookingSeat?
 
   @@unique([journeyId, seatId])
   @@index([journeyId, status])
   @@index([status, holdExpiresAt])
+}
+
+enum BookingStatus {
+  INITIATED
+  SEATS_HELD
+  PAYMENT_PENDING
+  PAYMENT_FAILED
+  PAYMENT_SUCCESS
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PassengerGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum SeatAllocationType {
+  CONFIRMED
+  RAC
+  WAITLIST
+}
+
+enum BookingSeatStatus {
+  HELD
+  CONFIRMED
+  CANCELLED
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  bookingReference String        @unique
+  pnr              String?       @unique
+  userId           String
+  journeyId        String
+  fromStationId    String
+  toStationId      String
+  quotaCode        String?
+  status           BookingStatus @default(INITIATED)
+  totalAmount      Int
+  currency         String        @default("NGN")
+  expiresAt        DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  fromStation Station @relation("bookingFrom", fields: [fromStationId], references: [id])
+  toStation   Station @relation("bookingTo", fields: [toStationId], references: [id])
+
+  passengers  BookingPassenger[]
+  seats       BookingSeat[]
+  idempotency IdempotencyKey[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model BookingPassenger {
+  id                String          @id @default(cuid())
+  bookingId         String
+  name              String
+  age               Int
+  gender            PassengerGender
+  documentType      String?
+  documentReference String?
+  createdAt         DateTime        @default(now())
+
+  booking Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seats   BookingSeat[]
+
+  @@index([bookingId])
+}
+
+model BookingSeat {
+  id             String             @id @default(cuid())
+  bookingId      String
+  inventoryItemId String            @unique
+  passengerId    String?
+  allocationType SeatAllocationType @default(CONFIRMED)
+  status         BookingSeatStatus  @default(HELD)
+  createdAt      DateTime           @default(now())
+
+  booking   Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  passenger BookingPassenger? @relation(fields: [passengerId], references: [id])
+  inventory InventoryItem    @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([bookingId])
+}
+
+model IdempotencyKey {
+  id              String   @id @default(cuid())
+  key             String
+  userId          String
+  bookingId       String?
+  responseStatus  Int
+  responseBody    Json
+  createdAt       DateTime @default(now())
+
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, key])
 }
