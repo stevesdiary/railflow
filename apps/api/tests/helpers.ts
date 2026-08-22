@@ -29,6 +29,17 @@ import type {
   SearchRepository,
 } from '../src/modules/search/search.types.js';
 import type { InventoryRepository } from '../src/modules/inventory/inventory.types.js';
+import type {
+  BookingDetailRow,
+  BookingRepository,
+  CancelOutcome,
+  CreateBookingRecordInput,
+  CreateBookingResult,
+  FareRow,
+  HeldSeatRow,
+  JourneyContextRow,
+  StoredIdempotentResponse,
+} from '../src/modules/booking/booking.types.js';
 import { hashToken } from '../src/modules/identity/tokens.js';
 
 export function testConfig(overrides: Partial<Env> = {}): Env {
@@ -202,6 +213,7 @@ export interface TestAppOptions {
   railway?: RailwayRepository;
   search?: { repository?: SearchRepository; cache?: SearchCache; cacheTtlSeconds?: number };
   inventory?: { repository?: InventoryRepository; holdTtlSeconds?: number };
+  booking?: { repository?: BookingRepository; holdTtlSeconds?: number };
   infra?: MemoryAuthInfra;
 }
 
@@ -220,6 +232,11 @@ export function buildTestApp(options: TestAppOptions = {}): FastifyInstance {
     inventory: {
       repository: options.inventory?.repository ?? createFakeInventoryRepository(),
       holdTtlSeconds: options.inventory?.holdTtlSeconds ?? 600,
+    },
+    booking: {
+      repository: options.booking?.repository ?? createFakeBookingRepository(),
+      holdTtlSeconds: options.booking?.holdTtlSeconds ??
+        options.inventory?.holdTtlSeconds ?? 600,
     },
   });
 }
@@ -393,5 +410,319 @@ export class MemoryAuthInfra {
       verificationTokenTtlSeconds: 86_400,
       publicBaseUrl: 'http://localhost:3000',
     };
+  }
+}
+
+export function createFakeBookingRepository(): BookingRepository {
+  return {
+    getJourneyContext: async () => null,
+    findFare: async () => null,
+    getHeldSeats: async () => [],
+    extendHolds: async () => 0,
+    findIdempotentResponse: async () => null,
+    storeResponse: async () => undefined,
+    createBooking: async () => ({ ok: false, conflict: 'reference' }),
+    getBookingDetail: async () => null,
+    listBookings: async () => [],
+    cancelBooking: async () => 'NOT_FOUND',
+  };
+}
+
+interface MemoryInventoryItem {
+  journeyId: string;
+  status: 'AVAILABLE' | 'HELD' | 'BOOKED';
+  holdExpiresAt: Date | null;
+  seatNumber: string;
+  coachNumber: string;
+  classCode: string;
+  className: string;
+}
+
+interface MemoryPassenger {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  documentType: string | null;
+  documentReference: string | null;
+}
+
+interface MemorySeat {
+  id: string;
+  inventoryItemId: string;
+  passengerId: string | null;
+  allocationType: string;
+  status: string;
+}
+
+interface MemoryBooking {
+  id: string;
+  bookingReference: string;
+  pnr: string | null;
+  userId: string;
+  journeyId: string;
+  fromStationId: string;
+  toStationId: string;
+  status: string;
+  totalAmount: number;
+  currency: string;
+  createdAt: Date;
+  expiresAt: Date | null;
+  passengers: MemoryPassenger[];
+  seats: MemorySeat[];
+}
+
+const CANCELLABLE = new Set([
+  'INITIATED',
+  'SEATS_HELD',
+  'PAYMENT_PENDING',
+  'PAYMENT_FAILED',
+  'PAYMENT_SUCCESS',
+  'CONFIRMED',
+]);
+
+export class MemoryBookingRepository implements BookingRepository {
+  readonly journeys = new Map<string, JourneyContextRow>();
+  readonly fares = new Map<string, FareRow>();
+  readonly inventory = new Map<string, MemoryInventoryItem>();
+  readonly bookings = new Map<string, MemoryBooking>();
+  readonly idempotency = new Map<string, StoredIdempotentResponse>();
+
+  private nextId = 1;
+
+  private id(prefix: string): string {
+    this.nextId += 1;
+    return `${prefix}-${this.nextId}`;
+  }
+
+  seedJourney(journey: JourneyContextRow): void {
+    this.journeys.set(journey.id, journey);
+  }
+
+  seedFare(fromCode: string, toCode: string, classCode: string, fare: FareRow): void {
+    this.fares.set(`${fromCode}:${toCode}:${classCode}`, fare);
+  }
+
+  seedHold(input: {
+    id?: string;
+    journeyId: string;
+    seatNumber: string;
+    coachNumber?: string;
+    classCode?: string;
+    className?: string;
+    holdExpiresAt?: Date | null;
+    status?: MemoryInventoryItem['status'];
+  }): string {
+    const id = input.id ?? this.id('inv');
+    this.inventory.set(id, {
+      journeyId: input.journeyId,
+      status: input.status ?? 'HELD',
+      holdExpiresAt:
+        input.holdExpiresAt !== undefined
+          ? input.holdExpiresAt
+          : new Date(Date.now() + 10 * 60_000),
+      seatNumber: input.seatNumber,
+      coachNumber: input.coachNumber ?? 'C1',
+      classCode: input.classCode ?? 'STD',
+      className: input.className ?? 'Standard',
+    });
+    return id;
+  }
+
+  getBooking(reference: string): MemoryBooking | undefined {
+    return this.bookings.get(reference);
+  }
+
+  async getJourneyContext(journeyId: string): Promise<JourneyContextRow | null> {
+    const journey = this.journeys.get(journeyId);
+    if (!journey) {
+      return null;
+    }
+    return { ...journey, train: { ...journey.train }, stops: journey.stops.map((s) => ({ ...s })) };
+  }
+
+  async findFare(
+    fromStationCode: string,
+    toStationCode: string,
+    classCode: string,
+  ): Promise<FareRow | null> {
+    return this.fares.get(`${fromStationCode}:${toStationCode}:${classCode}`) ?? null;
+  }
+
+  async getHeldSeats(journeyId: string, inventoryIds: string[]): Promise<HeldSeatRow[]> {
+    const rows: HeldSeatRow[] = [];
+    for (const id of inventoryIds) {
+      const item = this.inventory.get(id);
+      if (item && item.journeyId === journeyId && item.status === 'HELD') {
+        rows.push({
+          id,
+          holdExpiresAt: item.holdExpiresAt,
+          seatNumber: item.seatNumber,
+          coachNumber: item.coachNumber,
+          classCode: item.classCode,
+          className: item.className,
+        });
+      }
+    }
+    return rows;
+  }
+
+  async extendHolds(inventoryIds: string[], expiresAt: Date): Promise<number> {
+    let count = 0;
+    for (const id of inventoryIds) {
+      const item = this.inventory.get(id);
+      if (item && item.status === 'HELD') {
+        item.holdExpiresAt = expiresAt;
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  async findIdempotentResponse(
+    userId: string,
+    key: string,
+  ): Promise<StoredIdempotentResponse | null> {
+    return this.idempotency.get(`${userId}:${key}`) ?? null;
+  }
+
+  async storeResponse(
+    userId: string,
+    key: string,
+    responseStatus: number,
+    responseBody: unknown,
+  ): Promise<void> {
+    this.idempotency.set(`${userId}:${key}`, { responseStatus, responseBody });
+  }
+
+  async createBooking(input: CreateBookingRecordInput): Promise<CreateBookingResult> {
+    if (input.idempotencyKey) {
+      const mapKey = `${input.userId}:${input.idempotencyKey}`;
+      if (this.idempotency.has(mapKey)) {
+        return { ok: false, conflict: 'idempotency' };
+      }
+    }
+    for (const booking of this.bookings.values()) {
+      if (booking.pnr !== null && booking.pnr === input.pnr) {
+        return { ok: false, conflict: 'pnr' };
+      }
+      if (booking.bookingReference === input.bookingReference) {
+        return { ok: false, conflict: 'reference' };
+      }
+    }
+
+    const bookingId = this.id('bkg');
+    const passengers: MemoryPassenger[] = input.passengers.map((passenger) => ({
+      id: this.id('pas'),
+      name: passenger.name,
+      age: passenger.age,
+      gender: passenger.gender,
+      documentType: passenger.documentType ?? null,
+      documentReference: passenger.documentReference ?? null,
+    }));
+    const seats: MemorySeat[] = input.holdIds.map((inventoryItemId, index) => ({
+      id: this.id('bst'),
+      inventoryItemId,
+      passengerId: passengers[index]?.id ?? null,
+      allocationType: 'CONFIRMED',
+      status: 'HELD',
+    }));
+
+    const booking: MemoryBooking = {
+      id: bookingId,
+      bookingReference: input.bookingReference,
+      pnr: input.pnr,
+      userId: input.userId,
+      journeyId: input.journeyId,
+      fromStationId: '',
+      toStationId: '',
+      status: 'SEATS_HELD',
+      totalAmount: input.totalAmount,
+      currency: input.currency,
+      createdAt: new Date(),
+      expiresAt: input.expiresAt,
+      passengers,
+      seats,
+    };
+    this.bookings.set(booking.bookingReference, booking);
+    return {
+      ok: true,
+      bookingId: booking.id,
+      bookingReference: booking.bookingReference,
+      pnr: booking.pnr,
+    };
+  }
+
+  private toDetailRow(booking: MemoryBooking): BookingDetailRow {
+    const journey = this.journeys.get(booking.journeyId);
+    const stops = journey?.stops ?? [];
+    return {
+      reference: booking.bookingReference,
+      pnr: booking.pnr,
+      status: booking.status as BookingDetailRow['status'],
+      totalAmount: booking.totalAmount,
+      currency: booking.currency,
+      createdAt: booking.createdAt,
+      expiresAt: booking.expiresAt,
+      journeyId: booking.journeyId,
+      journeyDate: journey?.journeyDate ?? new Date(),
+      trainNumber: journey?.train.number ?? '',
+      trainName: journey?.train.name ?? '',
+      fromCode: stops[0]?.stationCode ?? '',
+      fromName: stops[0]?.stationName ?? '',
+      toCode: stops[stops.length - 1]?.stationCode ?? '',
+      toName: stops[stops.length - 1]?.stationName ?? '',
+      passengers: booking.passengers.map((passenger) => ({ ...passenger })),
+      seats: booking.seats.map((seat) => {
+        const item = this.inventory.get(seat.inventoryItemId);
+        return {
+          id: seat.id,
+          seatNumber: item?.seatNumber ?? '',
+          coachNumber: item?.coachNumber ?? '',
+          classCode: item?.classCode ?? '',
+          className: item?.className ?? '',
+          allocationType: seat.allocationType,
+          status: seat.status,
+          passengerId: seat.passengerId,
+        };
+      }),
+    };
+  }
+
+  async getBookingDetail(reference: string, userId: string): Promise<BookingDetailRow | null> {
+    const booking = this.bookings.get(reference);
+    if (!booking || booking.userId !== userId) {
+      return null;
+    }
+    return this.toDetailRow(booking);
+  }
+
+  async listBookings(userId: string): Promise<BookingDetailRow[]> {
+    const rows = [...this.bookings.values()]
+      .filter((booking) => booking.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return rows.map((booking) => this.toDetailRow(booking));
+  }
+
+  async cancelBooking(reference: string, userId: string): Promise<CancelOutcome> {
+    const booking = this.bookings.get(reference);
+    if (!booking || booking.userId !== userId) {
+      return 'NOT_FOUND';
+    }
+    if (!CANCELLABLE.has(booking.status)) {
+      return 'INVALID_STATE';
+    }
+    booking.status = 'CANCELLED';
+    for (const seat of booking.seats) {
+      if (seat.status !== 'CANCELLED') {
+        seat.status = 'CANCELLED';
+      }
+      const item = this.inventory.get(seat.inventoryItemId);
+      if (item && (item.status === 'HELD' || item.status === 'BOOKED')) {
+        item.status = 'AVAILABLE';
+        item.holdExpiresAt = null;
+      }
+    }
+    return 'CANCELLED';
   }
 }
