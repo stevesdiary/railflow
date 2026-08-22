@@ -58,6 +58,9 @@ export class BookingService {
     if (key) {
       const stored = await this.repository.findIdempotentResponse(userId, key);
       if (stored) {
+        if (stored.responseBody === null || stored.responseBody === undefined) {
+          throw new ConflictError('This request is already being processed');
+        }
         return { booking: stored.responseBody as PublicBookingDetail, replayed: true };
       }
     }
@@ -109,6 +112,8 @@ export class BookingService {
         bookingReference: generateBookingReference(),
         pnr: generatePnr(),
         journeyId: input.journeyId,
+        fromStationCode: codes.fromCode,
+        toStationCode: codes.toCode,
         quotaCode: null,
         totalAmount,
         currency: fare.currency,
@@ -122,17 +127,19 @@ export class BookingService {
         if (!detail) {
           throw new InternalError('Booking could not be loaded after creation');
         }
-        return { booking: this.toPublicDetail(detail), replayed: false };
+        const payload = this.toPublicDetail(detail);
+        if (key) {
+          await this.repository.storeResponse(userId, key, 201, payload);
+        }
+        return { booking: payload, replayed: false };
       }
       lastConflict = result.conflict;
       if (result.conflict === 'idempotency') {
-        const stored = key
-          ? await this.repository.findIdempotentResponse(userId, key)
-          : null;
-        if (stored) {
+        const stored = key ? await this.repository.findIdempotentResponse(userId, key) : null;
+        if (stored && stored.responseBody !== null && stored.responseBody !== undefined) {
           return { booking: stored.responseBody as PublicBookingDetail, replayed: true };
         }
-        break;
+        throw new ConflictError('This request is already being processed');
       }
     }
     throw new InternalError(`Booking could not be created (${lastConflict ?? 'unknown'})`);

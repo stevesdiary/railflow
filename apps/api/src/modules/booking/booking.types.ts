@@ -189,6 +189,12 @@ export interface BookingRepository {
     userId: string,
     key: string,
   ): Promise<StoredIdempotentResponse | null>;
+  storeResponse(
+    userId: string,
+    key: string,
+    responseStatus: number,
+    responseBody: unknown,
+  ): Promise<void>;
   createBooking(input: CreateBookingRecordInput): Promise<CreateBookingResult>;
   getBookingDetail(reference: string, userId: string): Promise<BookingDetailRow | null>;
   listBookings(userId: string): Promise<BookingDetailRow[]>;
