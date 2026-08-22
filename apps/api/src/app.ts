@@ -26,6 +26,11 @@ import {
   buildDefaultInventoryRepository,
   registerInventoryModule,
 } from './modules/inventory/inventory.routes.js';
+import type { BookingRepository } from './modules/booking/booking.types.js';
+import {
+  buildDefaultBookingRepository,
+  registerBookingModule,
+} from './modules/booking/booking.routes.js';
 
 export interface BuildAppOptions {
   config: Env;
@@ -35,6 +40,7 @@ export interface BuildAppOptions {
   railway?: { repository?: RailwayRepository };
   search?: { repository?: SearchRepository; cache?: SearchCache; cacheTtlSeconds?: number };
   inventory?: { repository?: InventoryRepository; holdTtlSeconds?: number };
+  booking?: { repository?: BookingRepository; holdTtlSeconds?: number };
 }
 
 export function buildApp(options: BuildAppOptions): FastifyInstance {
@@ -97,6 +103,14 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
     app,
     options.inventory?.repository ?? buildDefaultInventoryRepository(),
     options.inventory?.holdTtlSeconds ?? parseDuration(config.SEAT_HOLD_TTL),
+  );
+
+  registerBookingModule(
+    app,
+    options.booking?.repository ?? buildDefaultBookingRepository(),
+    options.booking?.holdTtlSeconds ??
+      options.inventory?.holdTtlSeconds ??
+      parseDuration(config.SEAT_HOLD_TTL),
   );
 
   return app;
