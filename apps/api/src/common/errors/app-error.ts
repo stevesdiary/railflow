@@ -76,3 +76,9 @@ export class ServiceUnavailableError extends AppError {
     super({ code: 'SERVICE_UNAVAILABLE', message, statusCode: 503 });
   }
 }
+
+export class InternalError extends AppError {
+  constructor(message = 'Internal server error', options?: { cause?: unknown }) {
+    super({ code: 'INTERNAL_ERROR', message, statusCode: 500, expose: false, cause: options?.cause });
+  }
+}
