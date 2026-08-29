@@ -1,0 +1,72 @@
+.signup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.auth-form,
+.signup-grid + .field,
+.field + .field,
+.terms {
+  margin-top: var(--space-4);
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger-700);
+}
+
+.terms__label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--color-neutral-700);
+  line-height: var(--line-height-normal);
+  cursor: pointer;
+}
+
+.terms__label input {
+  margin-top: var(--space-1);
+  accent-color: var(--color-primary-600);
+}
+
+.strength {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.strength__bar {
+  height: 0.25rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-neutral-200);
+  transition: background-color 0.15s ease;
+}
+
+.strength__bar--weak {
+  background-color: var(--color-danger-500);
+}
+
+.strength__bar--medium {
+  background-color: var(--color-limited);
+}
+
+.strength__bar--strong {
+  background-color: var(--color-avail);
+}
+
+.strength__label {
+  color: var(--color-neutral-500);
+}
+
+@media (max-width: 480px) {
+  .signup-grid {
+    grid-template-columns: 1fr;
+  }
+}
