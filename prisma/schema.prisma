@@ -253,10 +253,25 @@ model InventoryItem {
   journey Journey       @relation(fields: [journeyId], references: [id], onDelete: Cascade)
   seat    Seat          @relation(fields: [seatId], references: [id], onDelete: Cascade)
   booking BookingSeat?
+  seatHold SeatHold?
 
   @@unique([journeyId, seatId])
   @@index([journeyId, status])
   @@index([status, holdExpiresAt])
+}
+
+model SeatHold {
+  id              String        @id @default(cuid())
+  userId          String
+  inventoryItemId String        @unique
+  expiresAt       DateTime
+  createdAt       DateTime      @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum BookingStatus {
