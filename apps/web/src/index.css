@@ -32,58 +32,6 @@
   box-shadow: 0 10px 15px -3px rgba(26, 38, 52, 0.1), 0 4px 6px -2px rgba(26, 38, 52, 0.05);
 }
 
-.seat-map-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 40px 1fr 1fr;
-  gap: 16px;
-  justify-items: center;
-}
-
-.seat {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  position: relative;
-}
-
-.seat-available {
-  border: 1px solid theme('colors.outline-variant');
-  background-color: theme('colors.surface-container-lowest');
-  color: theme('colors.on-surface-variant');
-}
-
-.seat-available:hover {
-  border-color: theme('colors.primary');
-  background-color: theme('colors.surface-container-high');
-}
-
-.seat-selected {
-  background-color: theme('colors.primary');
-  color: theme('colors.on-primary');
-  border: 1px solid theme('colors.primary');
-  box-shadow: 0 4px 6px -1px rgba(26, 38, 52, 0.1);
-}
-
-.seat-occupied {
-  background-color: theme('colors.surface-variant');
-  border: 1px solid theme('colors.outline-variant');
-  color: theme('colors.outline');
-  cursor: not-allowed;
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 4px, theme('colors.surface-dim') 4px, theme('colors.surface-dim') 8px);
-}
-
-.seat-held {
-  border: 1px solid theme('colors.on-secondary-fixed-variant');
-  background-color: theme('colors.secondary-container');
-  color: theme('colors.on-secondary-container');
-  cursor: not-allowed;
-}
-
 .aisle {
   width: 100%;
   display: flex;
