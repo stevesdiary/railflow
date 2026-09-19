@@ -1,228 +1,198 @@
-import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { ApiError } from '../lib/api';
-import { useAuth } from '../lib/auth';
-import { AuthLayout } from '../components/auth/AuthLayout';
-import './SignUpPage.css';
-
-function passwordStrength(password: string): 'weak' | 'medium' | 'strong' {
-  if (password.length < 8) return 'weak';
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
-  const variety = Number(hasLetter) + Number(hasNumber) + Number(hasSpecial);
-  if (variety >= 3 && password.length >= 12) return 'strong';
-  return variety >= 2 ? 'medium' : 'weak';
-}
-
-interface FieldErrors {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  terms?: string;
-}
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Icon } from '../components/ui/Icon';
+import { Button } from '../components/ui/Button';
 
 export function SignUpPage() {
-  const { register } = useAuth();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const strength = passwordStrength(password);
+  // Simplified password strength calculation
+  const getStrength = () => {
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (password.match(/[A-Z]/) && password.match(/[a-z]/)) strength += 1;
+    if (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/)) strength += 1;
+    if (password.length > 0 && strength === 0) strength = 1;
+    return strength;
+  };
 
-  function validate(): FieldErrors {
-    const errors: FieldErrors = {};
-    if (!firstName.trim()) errors.firstName = 'First name is required.';
-    if (!lastName.trim()) errors.lastName = 'Last name is required.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email address.';
-    if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
-    if (confirmPassword !== password) errors.confirmPassword = 'Passwords do not match.';
-    if (!acceptedTerms) errors.terms = 'You must accept the terms to continue.';
-    return errors;
-  }
+  const strength = getStrength();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const errors = validate();
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-
-    setError(null);
-    setSubmitting(true);
-
-    try {
-      await register({ email, password, firstName: firstName.trim(), lastName: lastName.trim() });
-      setRegisteredEmail(email);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Unable to create your account.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (registeredEmail) {
-    return (
-      <AuthLayout>
-        <div className="auth-card__heading">
-          <h1 className="text-heading">Check your email</h1>
-          <p className="text-sm text-muted">Account created successfully.</p>
-        </div>
-
-        <p className="auth-alert auth-alert--success">
-          We sent a verification link to <strong>{registeredEmail}</strong>. Open it to verify your
-          email, then log in.
-        </p>
-
-        <Link to="/login" className="btn btn-primary btn-block">
-          Go to login
-        </Link>
-      </AuthLayout>
-    );
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate('/verify-email');
+  };
 
   return (
-    <AuthLayout>
-      <div className="auth-card__heading">
-        <h1 className="text-heading">Create your account</h1>
-        <p className="text-sm text-muted">Book train journeys across Nigeria.</p>
-      </div>
+    <div className="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col items-center justify-center p-gutter">
+      {/* Top Navigation */}
+      <header className="fixed top-0 left-0 w-full z-50 flex items-center px-margin-desktop h-16 bg-surface border-b border-outline-variant justify-center">
+        <span className="font-headline-lg text-headline-lg font-bold text-primary flex items-center gap-stack-sm tracking-tight">
+          <Icon name="train" className="text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }} />
+          Nigerian Rail
+        </span>
+      </header>
 
-      {error ? (
-        <p className="auth-alert auth-alert--error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      <form onSubmit={handleSubmit} noValidate>
-        <div className="signup-grid">
-          <div className="field">
-            <label className="field-label" htmlFor="firstName">
-              First name
-            </label>
-            <input
-              id="firstName"
-              className="input"
-              type="text"
-              autoComplete="given-name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
-            {fieldErrors.firstName ? (
-              <span className="field-error">{fieldErrors.firstName}</span>
-            ) : null}
+      <main className="w-full max-w-md mt-16">
+        <div className="bg-surface-container-lowest border border-outline-variant p-gutter shadow-sm">
+          <div className="text-center mb-stack-lg">
+            <h1 className="font-headline-lg text-headline-lg text-on-background mb-stack-sm">Create Account</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant">Join Nigerian Rail for a seamless travel experience.</p>
           </div>
 
-          <div className="field">
-            <label className="field-label" htmlFor="lastName">
-              Last name
-            </label>
-            <input
-              id="lastName"
-              className="input"
-              type="text"
-              autoComplete="family-name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
-            {fieldErrors.lastName ? (
-              <span className="field-error">{fieldErrors.lastName}</span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="field">
-          <label className="field-label" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className="input"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          {fieldErrors.email ? <span className="field-error">{fieldErrors.email}</span> : null}
-        </div>
-
-        <div className="field">
-          <label className="field-label" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            className="input"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {password ? (
-            <div className="strength">
-              <span className={`strength__bar strength__bar--${strength}`} />
-              <span className="strength__label text-xs">
-                {strength === 'strong'
-                  ? 'Strong password'
-                  : strength === 'medium'
-                    ? 'Medium password'
-                    : 'Use 8+ characters with letters and numbers'}
-              </span>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-stack-md">
+            {/* Full Name */}
+            <div className="flex flex-col gap-base">
+              <label className="font-title-md text-title-md text-on-surface text-sm" htmlFor="fullName">Full Name</label>
+              <input 
+                className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface p-stack-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md transition-colors" 
+                id="fullName" 
+                name="fullName" 
+                placeholder="e.g. Chinedu Okafor" 
+                required 
+                type="text" 
+              />
             </div>
-          ) : null}
-          {fieldErrors.password ? (
-            <span className="field-error">{fieldErrors.password}</span>
-          ) : null}
+
+            {/* Email */}
+            <div className="flex flex-col gap-base">
+              <label className="font-title-md text-title-md text-on-surface text-sm" htmlFor="email">Email Address</label>
+              <input 
+                className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface p-stack-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md transition-colors" 
+                id="email" 
+                name="email" 
+                placeholder="name@example.com" 
+                required 
+                type="email" 
+              />
+            </div>
+
+            {/* Phone Number */}
+            <div className="flex flex-col gap-base">
+              <label className="font-title-md text-title-md text-on-surface text-sm" htmlFor="phone">Phone Number</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-stack-sm bg-surface-variant border border-r-0 border-outline-variant text-on-surface-variant font-data-mono text-data-mono">
+                  +234
+                </span>
+                <input 
+                  className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface p-stack-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md transition-colors flex-1" 
+                  id="phone" 
+                  name="phone" 
+                  placeholder="801 234 5678" 
+                  required 
+                  type="tel" 
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-base">
+              <label className="font-title-md text-title-md text-on-surface text-sm" htmlFor="password">Password</label>
+              <div className="relative">
+                <input 
+                  className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface p-stack-sm pr-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md transition-colors" 
+                  id="password" 
+                  name="password" 
+                  placeholder="••••••••" 
+                  required 
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button 
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-on-surface-variant hover:text-primary" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  type="button"
+                >
+                  <Icon name={showPassword ? "visibility" : "visibility_off"} className="text-xl" />
+                </button>
+              </div>
+              
+              {/* Password Strength Indicator */}
+              {password.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex gap-1 h-1.5 w-full">
+                    <div className={`flex-1 transition-colors duration-300 ${strength >= 1 ? (strength === 1 ? 'bg-error' : (strength === 2 ? 'bg-tertiary-fixed-dim' : 'bg-surface-tint')) : 'bg-surface-variant'}`}></div>
+                    <div className={`flex-1 transition-colors duration-300 ${strength >= 2 ? (strength === 2 ? 'bg-tertiary-fixed-dim' : 'bg-surface-tint') : 'bg-surface-variant'}`}></div>
+                    <div className={`flex-1 transition-colors duration-300 ${strength >= 3 ? 'bg-surface-tint' : 'bg-surface-variant'}`}></div>
+                  </div>
+                  <p className={`font-label-caps text-label-caps mt-1 text-right ${strength === 1 ? 'text-error' : (strength === 2 ? 'text-tertiary-fixed-dim' : 'text-surface-tint')}`}>
+                    {strength === 1 ? 'WEAK' : (strength === 2 ? 'MEDIUM' : 'STRONG')}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div className="flex flex-col gap-base">
+              <label className="font-title-md text-title-md text-on-surface text-sm" htmlFor="confirmPassword">Confirm Password</label>
+              <div className="relative">
+                <input 
+                  className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface p-stack-sm pr-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md transition-colors" 
+                  id="confirmPassword" 
+                  name="confirmPassword" 
+                  placeholder="••••••••" 
+                  required 
+                  type={showConfirmPassword ? "text" : "password"}
+                />
+                <button 
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-on-surface-variant hover:text-primary" 
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                  type="button"
+                >
+                  <Icon name={showConfirmPassword ? "visibility" : "visibility_off"} className="text-xl" />
+                </button>
+              </div>
+            </div>
+
+            {/* Terms Checkbox */}
+            <div className="flex items-start gap-stack-sm mt-stack-sm">
+              <div className="flex items-center h-5">
+                <input 
+                  className="w-4 h-4 border border-outline-variant bg-surface-container-lowest text-primary focus:ring-primary focus:ring-offset-surface-container-lowest rounded-sm cursor-pointer" 
+                  id="terms" 
+                  name="terms" 
+                  required 
+                  type="checkbox" 
+                />
+              </div>
+              <label className="font-body-sm text-body-sm text-on-surface-variant" htmlFor="terms">
+                I agree to the <Link to="/terms" className="text-primary hover:underline font-title-md text-sm">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:underline font-title-md text-sm">Privacy Policy</Link>.
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <Button className="w-full py-stack-sm mt-stack-md flex items-center justify-center gap-2" type="submit">
+              Create Account
+              <Icon name="arrow_forward" className="text-lg" />
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="my-stack-lg flex items-center">
+            <div className="flex-grow border-t border-outline-variant"></div>
+            <span className="flex-shrink-0 mx-4 font-body-sm text-body-sm text-on-surface-variant">OR</span>
+            <div className="flex-grow border-t border-outline-variant"></div>
+          </div>
+
+          {/* Login Link */}
+          <div className="text-center">
+            <p className="font-body-md text-body-md text-on-surface">
+              Already have an account? 
+              <Link to="/login" className="text-primary font-title-md text-title-md hover:underline ml-1">Login here</Link>
+            </p>
+          </div>
+
+          {/* Trust Signal */}
+          <div className="mt-stack-lg pt-stack-md border-t border-outline-variant flex items-center justify-center gap-2 text-on-surface-variant opacity-80">
+            <Icon name="lock" className="text-[18px]" />
+            <span className="font-body-sm text-body-sm">Secure, 256-bit encrypted connection</span>
+          </div>
         </div>
-
-        <div className="field">
-          <label className="field-label" htmlFor="confirmPassword">
-            Confirm password
-          </label>
-          <input
-            id="confirmPassword"
-            className="input"
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-          {fieldErrors.confirmPassword ? (
-            <span className="field-error">{fieldErrors.confirmPassword}</span>
-          ) : null}
-        </div>
-
-        <div className="field terms">
-          <label className="terms__label text-sm">
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-            />
-            <span>
-              I agree to the <Link to="/terms">Terms of Service</Link> and{' '}
-              <Link to="/privacy">Privacy Policy</Link>.
-            </span>
-          </label>
-          {fieldErrors.terms ? <span className="field-error">{fieldErrors.terms}</span> : null}
-        </div>
-
-        <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-          {submitting ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
-
-      <p className="auth-card__footer">
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </AuthLayout>
+      </main>
+    </div>
   );
 }
