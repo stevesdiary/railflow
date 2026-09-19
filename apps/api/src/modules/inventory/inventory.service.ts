@@ -53,6 +53,7 @@ export class InventoryService {
 
   async holdSeats(
     input: HoldSeatsInput,
+    userId: string,
     holdTtlSeconds?: number,
   ): Promise<{
     heldSeats: PublicHeldSeat[];
@@ -97,7 +98,7 @@ export class InventoryService {
     }
 
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
-    const heldCount = await this.repository.holdSeats(heldIds, expiresAt);
+    const heldCount = await this.repository.holdSeats(heldIds, expiresAt, userId);
     if (heldCount < count) {
       throw new ConflictError('Seats were taken by another request; please retry');
     }
@@ -113,20 +114,20 @@ export class InventoryService {
     return { heldSeats, expiresAt };
   }
 
-  async releaseHolds(holdIds: string[]): Promise<number> {
+  async releaseHolds(holdIds: string[], userId?: string): Promise<number> {
     const ids = [...new Set((holdIds ?? []).filter((id) => typeof id === 'string' && id !== ''))];
     if (ids.length === 0) {
       return 0;
     }
-    return this.repository.releaseHolds(ids);
+    return this.repository.releaseHolds(ids, userId);
   }
 
-  async confirmHolds(holdIds: string[]): Promise<number> {
+  async confirmHolds(holdIds: string[], userId: string): Promise<number> {
     const ids = [...new Set((holdIds ?? []).filter((id) => typeof id === 'string' && id !== ''))];
     if (ids.length === 0) {
       throw new ValidationError('At least one held seat is required');
     }
-    const confirmed = await this.repository.confirmHolds(ids);
+    const confirmed = await this.repository.confirmHolds(ids, userId);
     if (confirmed !== ids.length) {
       throw new ConflictError('One or more seats are no longer held; please retry');
     }
