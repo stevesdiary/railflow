@@ -22,6 +22,11 @@ export interface PublicSearchJourney {
   durationMinutes: number;
   stopCount: number;
   classes: PublicSearchClass[];
+  availability: {
+    availableSeats: number;
+    capacity: number;
+    status: 'AVAILABLE' | 'LIMITED' | 'SOLD_OUT';
+  };
 }
 
 export interface PublicSearchResult {

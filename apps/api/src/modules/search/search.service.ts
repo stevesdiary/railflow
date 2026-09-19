@@ -135,6 +135,20 @@ export class SearchService {
       return null;
     }
 
+    let totalCapacity = 0;
+    let totalAvailable = 0;
+    for (const c of classes) {
+      totalCapacity += c.capacity;
+      totalAvailable += c.availableSeats;
+    }
+
+    let status: 'AVAILABLE' | 'LIMITED' | 'SOLD_OUT' = 'AVAILABLE';
+    if (totalAvailable === 0) {
+      status = 'SOLD_OUT';
+    } else if (totalAvailable <= totalCapacity * 0.2) {
+      status = 'LIMITED';
+    }
+
     return {
       journeyId: row.journeyId,
       train: row.train,
@@ -149,6 +163,11 @@ export class SearchService {
       durationMinutes,
       stopCount: toIndex - fromIndex + 1,
       classes,
+      availability: {
+        availableSeats: totalAvailable,
+        capacity: totalCapacity,
+        status,
+      },
     };
   }
 
