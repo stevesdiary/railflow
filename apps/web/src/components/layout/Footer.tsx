@@ -1,63 +1,41 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import './Footer.css';
-
-const FOOTER_COLUMNS = [
-  {
-    title: 'Company',
-    links: ['About us', 'Careers', 'News', 'Contact'],
-  },
-  {
-    title: 'Travel Info',
-    links: ['Stations', 'Train schedules', 'Fares', 'Safety'],
-  },
-  {
-    title: 'Support',
-    links: ['Help center', 'Refunds', 'RAC & waitlist', 'FAQs'],
-  },
-  {
-    title: 'Legal',
-    links: ['Terms of service', 'Privacy policy', 'Cookie policy'],
-  },
-];
 
 export function Footer() {
   return (
-    <footer className="footer">
-      <div className="container footer__inner">
-        <div className="footer__brand">
-          <Link to="/" className="header__brand">
-            <span className="header__logo" aria-hidden="true">
-              🚆
-            </span>
-            <span className="header__wordmark">RailFlow</span>
-          </Link>
-          <p className="footer__tagline">
-            Secure online booking for train journeys across Nigeria.
-          </p>
+    <footer className="bg-surface-dim dark:bg-inverse-surface border-t border-outline-variant w-full py-stack-lg mt-auto">
+      <div className="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto gap-stack-md md:gap-0">
+        <div className="font-title-md text-title-md font-bold text-on-surface text-center md:text-left">
+          Nigerian Rail
         </div>
-
-        {FOOTER_COLUMNS.map((column) => (
-          <nav key={column.title} className="footer__column" aria-label={column.title}>
-            <h3 className="footer__heading">{column.title}</h3>
-            <ul className="footer__list">
-              {column.links.map((label) => (
-                <li key={label}>
-                  <Link to="/" className="footer__link">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ))}
-      </div>
-
-      <div className="footer__bottom">
-        <div className="container footer__bottom-inner">
-          <span className="text-sm text-muted">
-            © {new Date().getFullYear()} RailFlow. All rights reserved.
-          </span>
-          <span className="text-sm text-muted">Fares shown in Naira (₦)</span>
+        <div className="flex flex-wrap justify-center gap-x-gutter gap-y-2">
+          <Link
+            to="/terms"
+            className="font-body-sm text-body-sm text-on-secondary-fixed-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            Terms of Service
+          </Link>
+          <Link
+            to="/privacy"
+            className="font-body-sm text-body-sm text-on-secondary-fixed-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            to="/refund-rules"
+            className="font-body-sm text-body-sm text-on-secondary-fixed-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            Refund Rules
+          </Link>
+          <Link
+            to="/contact"
+            className="font-body-sm text-body-sm text-on-secondary-fixed-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            Contact Us
+          </Link>
+        </div>
+        <div className="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim text-center md:text-right">
+          © 2026 Nigerian Railway Corporation. All rights reserved.
         </div>
       </div>
     </footer>

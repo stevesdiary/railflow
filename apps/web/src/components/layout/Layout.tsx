@@ -1,16 +1,17 @@
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import './Layout.css';
+import { BottomNavBar } from './BottomNavBar';
 
 export function Layout() {
   return (
-    <div className="layout">
+    <>
       <Header />
-      <main className="layout__main">
+      <main className="flex-grow pb-28 md:pb-0">
         <Outlet />
       </main>
       <Footer />
-    </div>
+      <BottomNavBar />
+    </>
   );
 }
