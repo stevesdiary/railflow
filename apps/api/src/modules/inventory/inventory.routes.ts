@@ -41,6 +41,7 @@ export function registerInventoryModule(
         count: body.count ?? 0,
         preferredSeatNumbers: body.preferredSeatNumbers,
       },
+      request.user.sub,
       undefined,
     );
     return { heldSeats: result.heldSeats, expiresAt: result.expiresAt };
@@ -48,7 +49,7 @@ export function registerInventoryModule(
 
   app.post('/inventory/holds/release', { preHandler: authenticate }, async (request) => {
     const body = request.body as { holdIds?: string[] };
-    const released = await service.releaseHolds(body.holdIds ?? []);
+    const released = await service.releaseHolds(body.holdIds ?? [], request.user.sub);
     return { released };
   });
 }
