@@ -63,6 +63,105 @@
 
 .strength__label {
   color: var(--color-neutral-500);
+  align-self: flex-end;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.05em;
+}
+
+.signup-header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.signup-header h1 {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-neutral-900);
+  margin-bottom: var(--space-2);
+}
+
+.signup-header p {
+  color: var(--color-neutral-600);
+}
+
+.phone-input-group {
+  display: flex;
+}
+
+.phone-prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  background-color: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-300);
+  border-right: none;
+  color: var(--color-neutral-600);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+}
+
+.password-input-group {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  padding: 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  color: var(--color-neutral-500);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: var(--color-primary-600);
+}
+
+.signup-divider {
+  margin: var(--space-8) 0;
+  display: flex;
+  align-items: center;
+}
+
+.signup-divider::before,
+.signup-divider::after {
+  content: '';
+  flex-grow: 1;
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.signup-divider span {
+  margin: 0 var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-500);
+}
+
+.signup-login-link {
+  text-align: center;
+}
+
+.signup-login-link p {
+  color: var(--color-neutral-900);
+}
+
+.trust-signal {
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-neutral-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--color-neutral-500);
+  opacity: 0.8;
 }
 
 @media (max-width: 480px) {
