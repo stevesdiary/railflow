@@ -93,9 +93,9 @@ export interface InventoryRepository {
     preferredSeatNumbers?: string[],
     excludeInventoryIds?: string[],
   ): Promise<SeatCandidate[]>;
-  holdSeats(inventoryIds: string[], holdExpiresAt: Date): Promise<number>;
-  releaseHolds(inventoryIds: string[]): Promise<number>;
-  confirmHolds(inventoryIds: string[]): Promise<number>;
+  holdSeats(inventoryIds: string[], holdExpiresAt: Date, userId: string): Promise<number>;
+  releaseHolds(inventoryIds: string[], userId?: string): Promise<number>;
+  confirmHolds(inventoryIds: string[], userId: string): Promise<number>;
   expireHolds(now: Date): Promise<number>;
   getHeldSeat(inventoryId: string): Promise<PublicHeldSeat | null>;
   getClassIdByCode(classCode: string): Promise<string | null>;

@@ -174,7 +174,7 @@ export class PrismaInventoryRepository implements InventoryRepository {
     }));
   }
 
-  async holdSeats(inventoryIds: string[], holdExpiresAt: Date): Promise<number> {
+  async holdSeats(inventoryIds: string[], holdExpiresAt: Date, userId: string): Promise<number> {
     if (inventoryIds.length === 0) {
       return 0;
     }
@@ -183,30 +183,93 @@ export class PrismaInventoryRepository implements InventoryRepository {
         where: { id: { in: inventoryIds }, status: 'AVAILABLE' },
         data: { status: 'HELD', holdExpiresAt },
       });
+      
+      if (result.count > 0) {
+        // We only want to create SeatHold for the rows that were actually updated.
+        // We can find the rows that are now HELD and match our expiresAt, but since we are in a transaction
+        // and we have inventoryIds, we can fetch which ones have our holdExpiresAt to be safe,
+        // or we just trust the transaction. Wait, updateMany returns count.
+        // To accurately insert SeatHold, we need the exact IDs that were updated.
+        const heldItems = await tx.inventoryItem.findMany({
+          where: { id: { in: inventoryIds }, status: 'HELD', holdExpiresAt },
+          select: { id: true },
+        });
+        
+        if (heldItems.length > 0) {
+          await tx.seatHold.createMany({
+            data: heldItems.map(item => ({
+              userId,
+              inventoryItemId: item.id,
+              expiresAt: holdExpiresAt,
+            })),
+          });
+        }
+      }
+      
       return result.count;
     });
   }
 
-  async releaseHolds(inventoryIds: string[]): Promise<number> {
+  async releaseHolds(inventoryIds: string[], userId?: string): Promise<number> {
     if (inventoryIds.length === 0) {
       return 0;
     }
-    const result = await this.prisma.inventoryItem.updateMany({
-      where: { id: { in: inventoryIds }, status: 'HELD' },
-      data: { status: 'AVAILABLE', holdExpiresAt: null },
+    return this.prisma.$transaction(async (tx) => {
+      // Find holds to release, ensuring they belong to the user if userId is provided
+      const items = await tx.inventoryItem.findMany({
+        where: { 
+          id: { in: inventoryIds }, 
+          status: 'HELD',
+          ...(userId ? { seatHold: { userId } } : {})
+        },
+        select: { id: true }
+      });
+
+      const validIds = items.map(i => i.id);
+      if (validIds.length === 0) return 0;
+
+      const result = await tx.inventoryItem.updateMany({
+        where: { id: { in: validIds } },
+        data: { status: 'AVAILABLE', holdExpiresAt: null },
+      });
+
+      await tx.seatHold.deleteMany({
+        where: { inventoryItemId: { in: validIds } },
+      });
+
+      return result.count;
     });
-    return result.count;
   }
 
-  async confirmHolds(inventoryIds: string[]): Promise<number> {
+  async confirmHolds(inventoryIds: string[], userId: string): Promise<number> {
     if (inventoryIds.length === 0) {
       return 0;
     }
-    const result = await this.prisma.inventoryItem.updateMany({
-      where: { id: { in: inventoryIds }, status: 'HELD' },
-      data: { status: 'BOOKED', holdExpiresAt: null },
+    return this.prisma.$transaction(async (tx) => {
+      // Ensure the items are held by the given user
+      const items = await tx.inventoryItem.findMany({
+        where: { 
+          id: { in: inventoryIds }, 
+          status: 'HELD',
+          seatHold: { userId } 
+        },
+        select: { id: true }
+      });
+
+      const validIds = items.map(i => i.id);
+      if (validIds.length === 0) return 0;
+
+      const result = await tx.inventoryItem.updateMany({
+        where: { id: { in: validIds } },
+        data: { status: 'BOOKED', holdExpiresAt: null },
+      });
+
+      await tx.seatHold.deleteMany({
+        where: { inventoryItemId: { in: validIds } },
+      });
+
+      return result.count;
     });
-    return result.count;
   }
 
   async expireHolds(now: Date): Promise<number> {
